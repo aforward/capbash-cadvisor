@@ -1,0 +1,47 @@
+#!/bin/bash
+
+#-----------
+# Configurations
+#-----------
+
+CADVISOR_LAUNCHER_DIR=${CADVISOR_LAUNCHER_DIR-/var/local/cadvisor}
+CADVISOR_PORT=${CADVISOR_PORT-8080}
+
+#-----------
+# Install Script
+#-----------
+
+echo "Installing INGEST.Q"
+
+mkdir -p $CADVISOR_LAUNCHER_DIR
+
+if [[ "$OS" == "redhat" ]]; then
+  EXTRA_START_FLAGS="--volume=/cgroup:/cgroup"
+else
+  EXTRA_START_FLAGS=""
+fi
+
+printf "%b" "#!/bin/bash
+CONTAINER_ID=\`cat ${CADVISOR_LAUNCHER_DIR}/container.pid 2> /dev/null\`
+if [[ \"\$CONTAINER_ID\" == \"\" ]]; then
+  echo \"Starting cAdvisor ($CADVISOR_PORT)\"
+  docker rm cadvisor >> /dev/null
+  docker run $EXTRA_START_FLAGS \
+    --volume=/var/run:/var/run:rw \
+    --volume=/sys:/sys:ro \
+    --volume=/var/lib/docker/:/var/lib/docker:ro \
+    --publish=$CADVISOR_PORT:8080 \
+    --detach=true \
+    --name=cadvisor \
+    google/cadvisor:latest 2> /dev/null > ${CADVISOR_LAUNCHER_DIR}/container.pid
+else
+  echo \"Container cAdvisor  already running, ${CADVISOR_LAUNCHER_DIR}/restart to restart it\"
+fi
+" > ${CADVISOR_LAUNCHER_DIR}/start
+
+NAME=cAdvisor DIR=$CADVISOR_LAUNCHER_DIR ./submodules/docker/stop
+NAME=cAdvisor DIR=$CADVISOR_LAUNCHER_DIR ./submodules/docker/restart
+NAME=cAdvisor DIR=$CADVISOR_LAUNCHER_DIR ./submodules/docker/idempot
+NAME=cAdvisor DIR=$CADVISOR_LAUNCHER_DIR ./submodules/docker/ip
+
+chmod 755 $CADVISOR_LAUNCHER_DIR/start
