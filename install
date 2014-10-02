@@ -15,14 +15,14 @@ echo "Installing INGEST.Q"
 
 mkdir -p $CADVISOR_LAUNCHER_DIR
 
-if [[ "$OS" == "redhat" ]]; then
+if [[ "$OS" == "redhat" ]] || [[ "$OS" == "centos" ]]; then
   EXTRA_START_FLAGS="--volume=/cgroup:/cgroup"
 else
   EXTRA_START_FLAGS=""
 fi
 
 printf "%b" "#!/bin/bash
-CONTAINER_ID=\`cat ${CADVISOR_LAUNCHER_DIR}/container.pid 2> /dev/null\`
+CONTAINER_ID=\`${CADVISOR_LAUNCHER_DIR}/running\`
 if [[ \"\$CONTAINER_ID\" == \"\" ]]; then
   echo \"Starting cAdvisor ($CADVISOR_PORT)\"
   docker rm cadvisor > /dev/null 2>&1
@@ -39,9 +39,5 @@ else
 fi
 " > ${CADVISOR_LAUNCHER_DIR}/start
 
-NAME=cAdvisor DIR=$CADVISOR_LAUNCHER_DIR ./submodules/docker/stop
-NAME=cAdvisor DIR=$CADVISOR_LAUNCHER_DIR ./submodules/docker/restart
-NAME=cAdvisor DIR=$CADVISOR_LAUNCHER_DIR ./submodules/docker/idempot
-NAME=cAdvisor DIR=$CADVISOR_LAUNCHER_DIR ./submodules/docker/ip
-
+NAME=cAdvisor DIR=$CADVISOR_LAUNCHER_DIR ./submodules/docker/helpers
 chmod 755 $CADVISOR_LAUNCHER_DIR/start
