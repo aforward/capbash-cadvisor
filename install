@@ -5,6 +5,7 @@
 #-----------
 
 CADVISOR_LAUNCHER_DIR=${CADVISOR_LAUNCHER_DIR-/var/local/cadvisor}
+CADVISOR_DOCKER_LIB=${CADVISOR_DOCKER_LIB-/var/lib/docker}
 CADVISOR_PORT=${CADVISOR_PORT-8080}
 
 #-----------
@@ -29,7 +30,7 @@ if [[ \"\$CONTAINER_ID\" == \"\" ]]; then
   docker run $EXTRA_START_FLAGS \
     --volume=/var/run:/var/run:rw \
     --volume=/sys:/sys:ro \
-    --volume=/var/lib/docker/:/var/lib/docker:ro \
+    --volume=$CADVISOR_DOCKER_LIB:/var/lib/docker:ro \
     --publish=$CADVISOR_PORT:8080 \
     --detach=true \
     --name=cadvisor \
