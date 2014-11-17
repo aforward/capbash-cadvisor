@@ -1,0 +1,8 @@
+docker run $EXTRA_START_FLAGS
+    --volume=/var/run:/var/run:rw
+    --volume=/sys:/sys:ro
+    --volume=$CADVISOR_DOCKER_LIB:/var/lib/docker:ro
+    --publish=$CADVISOR_PORT:8080
+    --detach=true
+    --name=cadvisor
+    google/cadvisor:latest

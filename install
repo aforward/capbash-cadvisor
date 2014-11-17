@@ -7,8 +7,9 @@ set -euo pipefail ; IFS=$'\n\t'
 #-----------
 
 CADVISOR_LAUNCHER_DIR=${CADVISOR_LAUNCHER_DIR-/var/local/cadvisor}
-CADVISOR_DOCKER_LIB=${CADVISOR_DOCKER_LIB-/var/lib/docker}
-CADVISOR_PORT=${CADVISOR_PORT-8080}
+
+export CADVISOR_DOCKER_LIB=${CADVISOR_DOCKER_LIB-/var/lib/docker}
+export CADVISOR_PORT=${CADVISOR_PORT-8080}
 
 #-----------
 # Install Script
@@ -19,28 +20,15 @@ notify "Installing cAdvisor"
 mkdir -p $CADVISOR_LAUNCHER_DIR
 
 if [[ "$OS" == "redhat" ]] || [[ "$OS" == "centos" ]]; then
-  EXTRA_START_FLAGS="--volume=/cgroup:/cgroup"
+  export EXTRA_START_FLAGS="--volume=/cgroup:/cgroup"
+  debug " -- Extra redhat flags: $EXTRA_START_FLAGS"
 else
-  EXTRA_START_FLAGS=""
+  export EXTRA_START_FLAGS=""
 fi
 
-printf "%b" "#!/bin/bash
-CONTAINER_ID=\`${CADVISOR_LAUNCHER_DIR}/running\`
-if [[ \"\$CONTAINER_ID\" == \"\" ]]; then
-  echo \"Starting cAdvisor ($CADVISOR_PORT)\"
-  docker rm cadvisor > /dev/null 2>&1
-  docker run $EXTRA_START_FLAGS \
-    --volume=/var/run:/var/run:rw \
-    --volume=/sys:/sys:ro \
-    --volume=$CADVISOR_DOCKER_LIB:/var/lib/docker:ro \
-    --publish=$CADVISOR_PORT:8080 \
-    --detach=true \
-    --name=cadvisor \
-    google/cadvisor:latest 2> /dev/null > ${CADVISOR_LAUNCHER_DIR}/container.pid
-else
-  echo \"Container cAdvisor  already running, ${CADVISOR_LAUNCHER_DIR}/restart to restart it\"
-fi
-" > ${CADVISOR_LAUNCHER_DIR}/start
+NAME=cadvisor IMAGE_NAME=google/cadvisor:latest DIR=$CADVISOR_LAUNCHER_DIR \
+  START=./submodules/cadvisor/files/_start \
+  DEBUG=ignore \
+  ./submodules/docker/helpers
 
-NAME=cAdvisor DIR=$CADVISOR_LAUNCHER_DIR ./submodules/docker/helpers
-chmod 755 $CADVISOR_LAUNCHER_DIR/start
+notify "DONE, Installing cAdvisor"
