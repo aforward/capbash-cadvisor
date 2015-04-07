@@ -1,12 +1,15 @@
 #!/bin/bash
-source ./submodules/bootstrap/logging
+source ./bits/bootstrap/logging
 set -euo pipefail ; IFS=$'\n\t'
 
 #-----------
 # Configurations
 #-----------
 
-CADVISOR_LAUNCHER_DIR=${CADVISOR_LAUNCHER_DIR-/var/local/cadvisor}
+LAUNCHER_OWNER=${LAUNCHER_OWNER-$USER}
+
+export LAUNCHER_DIR=${LAUNCHER_DIR-/var/local}
+export CADVISOR_LAUNCHER_DIR=${CADVISOR_LAUNCHER_DIR-$LAUNCHER_DIR/cadvisor}
 
 export CADVISOR_DOCKER_LIB=${CADVISOR_DOCKER_LIB-/var/lib/docker}
 export CADVISOR_PORT=${CADVISOR_PORT-8080}
@@ -19,6 +22,8 @@ notify "Installing cAdvisor"
 
 mkdir -p $CADVISOR_LAUNCHER_DIR
 
+OWNER=$LAUNCHER_OWNER ./bits/bootstrap/mkdir CADVISOR_LAUNCHER_DIR
+
 if [[ "$OS" == "redhat" ]] || [[ "$OS" == "centos" ]]; then
   export EXTRA_START_FLAGS="--volume=/cgroup:/cgroup"
   debug " -- Extra redhat flags: $EXTRA_START_FLAGS"
@@ -26,9 +31,7 @@ else
   export EXTRA_START_FLAGS=""
 fi
 
-NAME=cadvisor IMAGE_NAME=google/cadvisor:latest DIR=$CADVISOR_LAUNCHER_DIR \
-  START=./submodules/cadvisor/files/_start \
-  DEBUG=ignore \
-  ./submodules/docker/helpers
+NAME=cadvisor IMAGE_NAME=google/cadvisor:latest DIR=$CADVISOR_LAUNCHER_DIR BIT=cadvisor ./bits/docker/helpers
+$CADVISOR_LAUNCHER_DIR/start
 
 notify "DONE, Installing cAdvisor"

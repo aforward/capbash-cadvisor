@@ -1,6 +1,6 @@
 #!/bin/bash
 mkdir -p ./nodes
-cp ./submodules/cadvisor/files/cadvisor_node ./nodes/cadvisor
+cp ./bits/cadvisor/files/cadvisor_node ./nodes/cadvisor
 chmod 755 ./nodes/cadvisor
 
 capbash install docker
